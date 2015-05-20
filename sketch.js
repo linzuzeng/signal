@@ -14,12 +14,16 @@ function startstop(){
 
 	if ( song.isPlaying() ) { // .isPlaying() returns a boolean
 		button.html("mic");
-		song.stop();
+		
+		mic2.start();
 		fft.setInput(mic2);
+		song.stop();
 	} else {
 		button.html("file");
 		song.play();
+		
 		fft.setInput(song);
+		mic2.stop();
 	}
 }
 
