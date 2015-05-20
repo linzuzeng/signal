@@ -1,8 +1,31 @@
-var mic, fft;
+var mic, mic2,fft,song;
+function mousePressed() {
 
+}
+function preload() {
+  // Load a sound file
+  song = loadSound('./Raindrops.mp3');
+}
+function startstop(){
+	  if ( song.isPlaying() ) { // .isPlaying() returns a boolean
+    song.stop();
+    fft.setInput(mic2);
+  } else {
+    song.play();
+    fft.setInput(song);
+  }
+}
 function setup() {
+  greeting = createElement('h2', 'Homework for Signal & Systems - FFT spectrum analyzer');
+ greeting = createElement('h', 'Choose input:'); 
+  button = createButton('file/mic');
+  createElement('br'); 
+ createElement('br'); 
+  button.mousePressed(startstop);
+
 	createCanvas(1200,600);
 	noFill();
+	//song = loadSound('./Damscray_DancingTiger.mp3');
 	/*mic = new p5.Oscillator(880);
 	mic.start();
 	mic.amp(1);
@@ -15,33 +38,41 @@ function setup() {
 		mic2 = new p5.AudioIn();
 		mic2.amp(0.5);
 		mic2.start();
-		//mic2.connect(mic);
+		song.connect(mic2);
 		
 		fft = new p5.FFT(0,1024*8);
-		fft.setInput(mic2);
+		//song.play();
+		fft.setInput(song);
 	}
 
 	function draw() {
 		background(200);
 
 		var spectrum = fft.analyze();
+		var spectrum_log = [];
 
+		for (var i = 40, a=0; i<spectrum.length; i*=1.0028,a++) {
+			spectrum_log[a]=0;
+			for (b=Math.floor(i/1.0028);  b<=Math.floor(i); b++)
+			{
+				if (spectrum[b]>spectrum_log[a])
+					spectrum_log[a]=spectrum[b];
+			}
+		}
 		beginShape();
 
-		for (i = 40,a=0; (i)<(spectrum.length); i*=1.0028) {
-			a++;
-			vertex(a, map(spectrum[Math.floor(i)], 0, 256, height, 0) );
+		for (var a = 0; a<spectrum_log.length; a++) {
+			vertex(a, map(spectrum_log[a], 0, 256, height, 0) );
 		}
 		endShape();
 		beginShape()
-		for (i = 40,a=0; (i)<(spectrum.length); i*=1.0028) {
-			a++
+		for (var a = 0; a<spectrum_log.length; a++) {
 			switch (a%(62*4)) {
 				case (8+62):{
 					stroke("black");
 					text("1",a+3,10);
 					stroke("red");
-					line(a,0,a,map(spectrum[Math.floor(i)], 0, 256, height, 0)  );
+					line(a,0,a,map(spectrum_log[a], 0, 256, height, 0)  );
 					break;
 				}
 			/*
@@ -63,7 +94,7 @@ function setup() {
 					stroke("black");
 					text("A",a+3,10);
 					stroke("blue");
-					line(a,0,a,map(spectrum[Math.floor(i)], 0, 256, height, 0)  );
+					line(a,0,a,map(spectrum_log[a], 0, 256, height, 0)  );
 					break;
 				}
 			}
@@ -71,7 +102,7 @@ function setup() {
 			
 		}
 		str=["6","6#" ,"7" ,"1" ,"1#" ,"2" ,"2#" ,"3" ,"4" ,"4#", "5" ,"5#" ];
-		for (n=0;n<60;n++)
+		for (var n=0;n<60;n++)
 		{
 			a=8+248*n/12;
 				stroke("black");
