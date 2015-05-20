@@ -42,7 +42,7 @@ function setup() {
 					line(a,0,a,map(spectrum[Math.floor(i)], 0, 256, height, 0)  );
 					break;
 				}
-
+			/*
 				case (8+62*2):{
 					stroke("black");
 					text("0",a+3,10);
@@ -56,22 +56,29 @@ function setup() {
 					stroke("blue");
 					line(a,0,a,map(spectrum[Math.floor(i)], 0, 256, height, 0)  );
 					break;
-				}
+				}*/
 				case(8):{
 					stroke("black");
-					text("6",a+3,10);
-					stroke("yellow");
+					text("A",a+3,10);
+					stroke("blue");
 					line(a,0,a,map(spectrum[Math.floor(i)], 0, 256, height, 0)  );
 					break;
 				}
 			}
 
-			if (a%(62/4)==(8)){
+			
+		}
+		str=["6","6#" ,"7" ,"1" ,"1#" ,"2" ,"2#" ,"3" ,"4" ,"4#", "5" ,"5#" ,"6","6#" ,"7" ,"1" ,"1#" ,"2" ,"2#" ,"3" ,"4" ,"4#", "5" ,"5#" ,"6","6#" ,"7" ,"1" ,"1#" ,"2" ,"2#" ,"3" ,"4" ,"4#", "5" ,"5#" ,"6","6#" ,"7" ,"1" ,"1#" ,"2" ,"2#" ,"3" ,"4" ,"4#", "5" ,"5#" ,"6"];
+
+		for (n=0;n<50;n++)
+		{
+			a=8+248*n/12;
 				stroke("black");
-				text("?",a+3,30);
+
+				text(str[n],a+3,30);
 				stroke("white");
-				line(a,0,a,50  );
-			}
+				line(a,0,a,100  );
+			
 		}
 		endShape();
 	}
