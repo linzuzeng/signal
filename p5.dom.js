@@ -301,8 +301,7 @@
         elt.multiple = 'multiple';
       }
      
-      // Now let's handle when a file was selected
-      elt.addEventListener('change', handleFileSelect, false);
+    
 
       // Function to handle when a file is selected
       // We're simplifying life and assuming that we always
@@ -333,6 +332,8 @@
           }
         }
       }
+        // Now let's handle when a file was selected
+      elt.addEventListener('change', handleFileSelect, false);
       return addElement(elt, this);
     } else {
       console.log('The File APIs are not fully supported in this browser. Cannot create element.');
