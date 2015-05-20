@@ -4,24 +4,43 @@ function mousePressed() {
 }
 function preload() {
   // Load a sound file
-  song = loadSound('./Raindrops.mp3');
+  song =new p5.SoundFile("");
 }
 function startstop(){
-	  if ( song.isPlaying() ) { // .isPlaying() returns a boolean
-    song.stop();
-    fft.setInput(mic2);
-  } else {
-    song.play();
-    fft.setInput(song);
-  }
+	if (!song.isLoaded()){
+		button.html("mic");
+		fft.setInput(mic2);
+	}else{
+
+	if ( song.isPlaying() ) { // .isPlaying() returns a boolean
+		button.html("mic");
+		song.stop();
+		fft.setInput(mic2);
+	} else {
+		button.html("file");
+		song.play();
+		fft.setInput(song);
+	}
 }
+
+}
+
+function handleFiles(files) {
+	song.setPath(files.data);
+	button.html( "file/mic");
+}
+
 function setup() {
-  greeting = createElement('h2', 'Homework for Signal & Systems - FFT spectrum analyzer');
- greeting = createElement('h', 'Choose input:'); 
-  button = createButton('file/mic');
-  createElement('br'); 
- createElement('br'); 
-  button.mousePressed(startstop);
+	createElement('h2', 'Homework for Signal & Systems - FFT spectrum analyzer');
+	createElement('h', 'Input:'); 
+	button=createButton('mic');
+	createElement('h', 'File:'); 
+	createFileInput(handleFiles);
+
+	createElement('br'); 
+	createElement('br'); 
+	button.mousePressed(startstop);
+
 
 	createCanvas(1200,600);
 	noFill();
@@ -38,11 +57,11 @@ function setup() {
 		mic2 = new p5.AudioIn();
 		mic2.amp(0.5);
 		mic2.start();
-		song.connect(mic2);
+		//song.connect(mic2);
 		
 		fft = new p5.FFT(0,1024*8);
 		//song.play();
-		fft.setInput(song);
+		fft.setInput(mic2);
 	}
 
 	function draw() {
@@ -105,11 +124,11 @@ function setup() {
 		for (var n=0;n<60;n++)
 		{
 			a=8+248*n/12;
-				stroke("black");
+			stroke("black");
 
-				text(str[n%12],a+3,30);
-				stroke("white");
-				line(a,0,a,100  );
+			text(str[n%12],a+3,30);
+			stroke("white");
+			line(a,0,a,100  );
 			
 		}
 		endShape();
