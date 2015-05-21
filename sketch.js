@@ -156,16 +156,22 @@ function draw() {
 		stroke("white");
 		line(a,0,a,100);
 		//trigger!
-		
-		if (spectrum_log[a]>256*3/4)
+
+		var max_in_range=0;
+		for (var  b=a-Math.floor(length_f/24);b<a+Math.floor(length_f/24);b++)
 		{
-			round_this+=Math.floor(n/12)+" "+str[n%12]+";	"
+			if (spectrum_log[b]>256*3/4)
+			{
+				round_this+=Math.floor(n/12)+" "+str[n%12]+";	"
+				break;
+			}	
 		}
 	}
 	
 	endShape();
 	beginShape();
 	for (var a = 0; a<spectrum_log.length; a++) {
+		
 		if (spectrum_log[a]>256*3/4)
 		{
 			stroke("red");
