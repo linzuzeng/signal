@@ -131,6 +131,7 @@ function draw() {
 	beginShape();
 	var str=["6","6#" ,"7" ,"1" ,"1#" ,"2" ,"2#" ,"3" ,"4" ,"4#", "5" ,"5#" ];
 	var round_this = "";
+	var got_freq=new Set();
 	for (var a=0,n=0;a<1200;n++,a=offset_f+length_f*n/12)
 	{
 		switch (n%12){
@@ -160,9 +161,14 @@ function draw() {
 		var max_in_range=0;
 		for (var  b=a-Math.floor(length_f/13);b<a+Math.floor(length_f/13);b++)
 		{
-			if (spectrum_log[b]>256*3/4)
+
+			if ((spectrum_log[b]>256*3/4) )
 			{
-				round_this+=Math.floor(n/12)+" ["+str[n%12]+"] ";
+				if (spectrum_log[b-length_f]>256*3/4)
+					break;
+				if (spectrum_log[b-length_f*2]>256*3/4)
+					break;
+				got_freq.add(Math.floor(n/12)+" ["+str[n%12]+"] ");
 				break;
 			}	
 		}
@@ -178,9 +184,11 @@ function draw() {
 			line(a,0,a,map(spectrum_log[a], 0, 256, height, 0)  );
 		}
 	}
-	
-	if (round_last!=round_this)
-		notes.html(notes.html()+round_this+";	");
+	got_freq.forEach(function(value) {
+		round_this+=value;
+	});
+	if ((round_last!=round_this)&&(!(round_this=="")))
+		notes.html(round_this);
 	round_last=round_this;
 	endShape();
 }
