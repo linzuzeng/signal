@@ -1,8 +1,9 @@
-var mic, mic2,fft,song,capture=false;
+var mic, mic2,fft,song,capture=false,capture_t=0;
 fft_f=8192;
 low_f=214.84375;
 length_f=248;
 temp1=[];
+temp2=[];
 function mousePressed() {
 	capture=true;
 }
@@ -68,7 +69,7 @@ function setup() {
 	button=createButton('mic');
 	createElement('h', 'File:'); 
 	createFileInput(handleFiles);
-	createElement('h', 'Recognize: ');
+	prompt = createElement('h', 'Click to set a standard signal: ');
 	recog= createElement('h', 'NaN');  
 	createElement('br'); 
 	createElement('br'); 
@@ -112,17 +113,43 @@ function setup() {
 		}
 		if (capture){
 			capture=false;
-			//console.log(spectrum_log);
-			temp1= spectrum_log;
-		}
-		recog.html(Math.round(mulitply1(spectrum_log,temp1)*100).toString()+"%");
+			switch( capture_t)
+			{
+				case 0 :
+				{
+					temp1= spectrum_log;
+					prompt.html("Click to set the second standard signal:");
+					capture_t++;
+					break;
+				}
+				case 1:
+				{
+					temp2=spectrum_log;
+					capture_t = 0;
+					prompt.html("Click to set a standard signal:");
+					break;
+				}
+			}
 			
+		}
+
+		recog.html(Math.round(mulitply1(spectrum_log,temp1)*100).toString()+"%	"+Math.round(mulitply1(spectrum_log,temp2)*100).toString()+"%");
 		
 		beginShape();
-
 		for (var a = 0; a<spectrum_log.length; a++) {
 			vertex(a, map(spectrum_log[a], 0, 256, height, 0) );
 		}
+		endShape();
+		beginShape();
+		for (var a = 0; a<spectrum_log.length; a++) {
+			if (spectrum_log[a]>256*3/4)
+			{
+				stroke("red");
+				line(a,0,a,map(spectrum_log[a], 0, 256, height, 0)  );
+				//line(a, map(256, 0, 256, height, 0) );
+			}
+		}
+			
 		endShape();
 
 		var offset_f =Math.floor(Math.log(   55/low_f  )/Math.log(  Math.pow(2,1/length_f)));
@@ -136,7 +163,7 @@ function setup() {
 				case 3:
 				{
 					stroke("black");
-					text("A",a+3,10);
+					text("1",a+3,10);
 					stroke("blue");
 					line(a,0,a,map(spectrum_log[a], 0, 256, height, 0)  );
 					break;
@@ -144,7 +171,7 @@ function setup() {
 				case 0:
 				{
 					stroke("black");
-					text("1",a+3,10);
+					text("A",a+3,10);
 					stroke("red");
 					line(a,0,a,map(spectrum_log[a], 0, 256, height, 0)  );
 					break;
