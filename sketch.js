@@ -66,8 +66,8 @@ function setup() {
 	createCanvas(1200,500);
 	createElement('br'); 
 	createElement('br'); 
-	createElement('h', 'Recognized notes (amp-method, may be incorrect): ');  
-	notes=createElement('h', 'None');  
+	createElement('h', 'Recognized notes: ');  
+	notes=createElement('h', ' (amp-method, may be incorrect) ');  
 	noFill();
 /*
 mic = new p5.Oscillator(880*4);
@@ -158,11 +158,11 @@ function draw() {
 		//trigger!
 
 		var max_in_range=0;
-		for (var  b=a-Math.floor(length_f/24);b<a+Math.floor(length_f/24);b++)
+		for (var  b=a-Math.floor(length_f/13);b<a+Math.floor(length_f/13);b++)
 		{
 			if (spectrum_log[b]>256*3/4)
 			{
-				round_this+=Math.floor(n/12)+" "+str[n%12]+";	"
+				round_this+=Math.floor(n/12)+" ["+str[n%12]+"] ";
 				break;
 			}	
 		}
@@ -180,7 +180,7 @@ function draw() {
 	}
 	
 	if (round_last!=round_this)
-		notes.html(notes.html()+round_this);
+		notes.html(notes.html()+round_this+";	");
 	round_last=round_this;
 	endShape();
 }
