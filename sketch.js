@@ -65,7 +65,7 @@ function setup() {
 	createCanvas(1200,500);
 	createElement('br'); 
 	createElement('br'); 
-	createElement('h', 'Recognized notes (amp-method): ');  
+	createElement('h', 'Recognized notes (amp-method, may be incorrect): ');  
 	notes=createElement('h', 'None');  
 	noFill();
 /*
