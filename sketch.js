@@ -1,4 +1,5 @@
 var mic, mic2,fft,song,capture=false,capture_t=0;
+var round_last ="";
 fft_f=8192;
 low_f=214.84375;
 length_f=248;
@@ -129,6 +130,7 @@ function draw() {
 	var offset_f =Math.floor(Math.log(   55/low_f  )/Math.log(  Math.pow(2,1/length_f)));
 	beginShape();
 	var str=["6","6#" ,"7" ,"1" ,"1#" ,"2" ,"2#" ,"3" ,"4" ,"4#", "5" ,"5#" ];
+	var round_this = "";
 	for (var a=0,n=0;a<1200;n++,a=offset_f+length_f*n/12)
 	{
 		switch (n%12){
@@ -154,11 +156,13 @@ function draw() {
 		stroke("white");
 		line(a,0,a,100);
 		//trigger!
+		
 		if (spectrum_log[a]>256*3/4)
 		{
-			notes.html(notes.html()+Math.floor(n/12)+" "+str[n%12]+";	");
+			round_this+=Math.floor(n/12)+" "+str[n%12]+";	"
 		}
 	}
+	
 	endShape();
 	beginShape();
 	for (var a = 0; a<spectrum_log.length; a++) {
@@ -168,5 +172,9 @@ function draw() {
 			line(a,0,a,map(spectrum_log[a], 0, 256, height, 0)  );
 		}
 	}
+	
+	if (round_last!=round_this)
+		notes.html(notes.html()+round_this);
+	round_last=round_this;
 	endShape();
 }
