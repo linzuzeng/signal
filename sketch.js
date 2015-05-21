@@ -132,7 +132,7 @@ function draw() {
 	var str=["6","6#" ,"7" ,"1" ,"1#" ,"2" ,"2#" ,"3" ,"4" ,"4#", "5" ,"5#" ];
 	var round_this = "";
 	var got_freq=new Set();
-	for (var a=0,n=0;a<1200;n++,a=offset_f+length_f*n/12)
+	for (var a=0,n=0;a<spectrum_log.length;n++,a=Math.floor(offset_f+length_f*n/12))
 	{
 		switch (n%12){
 			case 3:
@@ -159,15 +159,16 @@ function draw() {
 		//trigger!
 
 		var max_in_range=0;
-		for (var  b=a-Math.floor(length_f/13);b<a+Math.floor(length_f/13);b++)
+		for (var  bb=a-Math.floor(length_f/12)-1;bb<a+Math.floor(length_f/12)+1;bb++)
 		{
-
-			if ((spectrum_log[b]>256*3/4) )
+			if ((spectrum_log[a]>(256*3/4)) )
 			{
+				
 				if (spectrum_log[b-length_f]>256*3/4)
 					break;
 				if (spectrum_log[b-length_f*2]>256*3/4)
 					break;
+				
 				got_freq.add(Math.floor(n/12)+" ["+str[n%12]+"] ");
 				break;
 			}	
