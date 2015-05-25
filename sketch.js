@@ -1,4 +1,4 @@
-var mic, mic2, osc, fft, song, capture = false,
+var mic, osc, fft, song, capture = false,
   capture_t = 0;
 var round_last = "";
 fft_f = 8192;
@@ -37,18 +37,18 @@ function preload() {
 function startstop() {
   if (!song.isLoaded()) {
     button.html("mic");
-    //fft.setInput(mic2);
+    fft.setInput(mic);
   } else {
     if (song.isPlaying()) {
       button.html("mic");
-      mic2.start();
-      //fft.setInput(mic2);
+      fft.setInput(mic);
+      mic.connect(fft);
       song.stop();
     } else {
-      //button.html("file");
+      button.html("file");
       song.play();
-      //fft.setInput(song);
-      mic2.stop();
+      fft.setInput(song);
+      mic.disconnect();
     }
   }
 }
@@ -76,7 +76,6 @@ function setup() {
   notes = createElement('h', ' (amp-method, may be incorrect) ');
   noFill();
 
-
   /*
   mic = new p5.Oscillator(880*4);
   mic.start();
@@ -87,25 +86,16 @@ function setup() {
   	mic1.amp(1);
   	mic1.connect(mic);
   	*/
-  mic2 = new p5.AudioIn();
-  mic2.start();
-  mic2.disconnect();
+  mic = new p5.AudioIn();
+  mic.start();
+  mic.disconnect();
 
   fft = new p5.FFT(0, fft_f);
-  fft.setInput(mic2);
-
-
-  //mic2.connect(fft);
-  //fft.setInput(mic2);
+  fft.setInput(mic);
 
   osc = new p5.SinOsc();
   osc.start();
-  //osc.start();
-//  osc.connect(p5.soundOut);
-//  osc.start(0,400);
-  //osc.disconnect();
-  //osc.connect(p5.soundOut);
-  //mic2.connect(p5.soundOut);
+
 }
 
 function draw() {
