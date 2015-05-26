@@ -71,25 +71,34 @@ function setup() {
 
   createElement('h', 'File:');
   createFileInput(handleFiles);
-  prompt = createElement('h', 'Profile (DEF:piano): ');
+  prompt = createElement('h', 'Profile (DEFAULT:piano): ');
   button_capture = createButton("Capture")
-  createElement('br');
-  createElement('h', 'High-amp notes: ');
-  notes = createElement('h', ' (amp-method, may be incorrect) ');
   createElement('br');
   createElement('h', 'Identified notes: ');
   recog = createElement('h', '--');
   createElement('br');
+  createElement('i', 'High-amp notes: ');
+  notes = createElement('i', ' (amp-method, may be incorrect) ');
+  createElement('br');
 
-  button_capture.mousePressed(function(){
-    capture = !capture;
-  })
+
 
   createElement('br');
   createElement('br');
   createCanvas(1200, 500);
   createElement('br');
   createElement('br');
+  result = createElement('h', '--');
+
+    button_capture.mousePressed(function(){
+      capture = !capture;
+      if (capture){
+        captured=[];
+      }
+      else {
+        result.html(JSON.stringify(captured));
+      }
+    })
 
   noFill();
 
@@ -212,6 +221,7 @@ function draw() {
         console.log(capture_t);
       }
   }else {
+
     if (checkthis(max(spectrum_log)))
       {
     var best=-1;
@@ -226,9 +236,11 @@ function draw() {
         best_amp=now.amp;
       }
     }
-    recog.html(best_id.toString() +"  ["+Math.round(best * 100).toString() + "%, "+Math.round(best_amp*100)+"]"  );
+    var n=best_id+38;
+
+    recog.html(Math.floor(n / 12) + " [" + str[n % 12] + "] " +"  ["+Math.round(best * 100).toString() + "%, "+Math.round(best_amp*100)+"]"  );
   }
   }
-  //recog.html(Math.round(mulitply1(spectrum_log, temp1) * 100).toString() + "%	" + Math.round(mulitply1(spectrum_log, temp2) * 100).toString() + "%");
+
 
 }
