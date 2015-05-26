@@ -189,7 +189,7 @@ function draw() {
   }
   else{
     //osc.amp(1);
-    var lowest = 214748;
+    var lowest = 2147483648;
     got_freq.forEach(function(n) {
       round_this += Math.floor(n / 12) + " [" + str[n % 12] + "] ";
       if (lowest>n){
