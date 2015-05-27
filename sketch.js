@@ -146,7 +146,7 @@ function draw() {
   //draw note
   var offset_f = Math.floor(Math.log(55 / low_f) / Math.log(Math.pow(2, 1 / length_f)));
   beginShape();
-  var str = ["6", "6#", "7", "1", "1#", "2", "2#", "3", "4", "4#", "5", "5#"];
+  var str = ["1", "1#", "2", "2#", "3", "4", "4#", "5", "5#","6", "6#", "7" ];
   var round_this = "";
   var got_freq = new Set();
   for (var a = 0, n = 0; a < spectrum_log.length; n++, a = Math.floor(offset_f + length_f * n / 12)) {
@@ -169,7 +169,7 @@ function draw() {
         }
     }
     stroke("black");
-    text(str[n % 12], a + 3, 30);
+    text(str[(n+21) % 12], a + 3, 30);
     stroke("white");
     line(a, 0, a, 100);
   }
@@ -200,7 +200,7 @@ function draw() {
     //osc.amp(1);
     var lowest = 2147483648;
     got_freq.forEach(function(n) {
-      round_this += Math.floor(n / 12) + " [" + str[n % 12] + "] ";
+      round_this +=  str[(n+21) % 12]+ " [" + Math.floor((n+21) / 12) + "] ";
       if (lowest>n){
         lowest=n;
       }
@@ -239,7 +239,7 @@ function draw() {
 
     var n=best_id+32;
 
-    recog.html(best_id+32+" "+Math.floor((n-1) / 12-1) + " [" + str[(n+2) % 12] + "]   ["+Math.round(best * 100).toString() + "%, "+Math.round(best_amp*100)+"]"  );
+    recog.html(best_id+32+" "+ str[(n-1) % 12]  + " [" +Math.floor((n-1) / 12-1)+ "]   ["+Math.round(best * 100).toString() + "%, "+Math.round(best_amp*100)+"]"  );
     if ((best_amp*100<30)||(best*100<60))
       recog.html("");
   }
