@@ -222,7 +222,7 @@ function draw() {
       }
   }else {
 
-    if (checkthis(max(spectrum_log)))
+  //  if (checkthis(max(spectrum_log)))
       {
     var best=-1;
     var best_id=0;
@@ -236,9 +236,12 @@ function draw() {
         best_amp=now.amp;
       }
     }
-    var n=best_id+38;
+
+    var n=best_id-2;
 
     recog.html(Math.floor(n / 12) + " [" + str[n % 12] + "] " +"  ["+Math.round(best * 100).toString() + "%, "+Math.round(best_amp*100)+"]"  );
+    if (best_amp*100<40)
+      recog.html("");
   }
   }
 
