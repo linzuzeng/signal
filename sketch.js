@@ -222,7 +222,7 @@ function draw() {
       }
   }else {
 
-  //  if (checkthis(max(spectrum_log)))
+   if (checkthis(max(spectrum_log)))
       {
     var best=-1;
     var best_id=0;
@@ -237,10 +237,10 @@ function draw() {
       }
     }
 
-    var n=best_id-2;
+    var n=best_id+32;
 
-    recog.html(Math.floor(n / 12) + " [" + str[n % 12] + "] " +"  ["+Math.round(best * 100).toString() + "%, "+Math.round(best_amp*100)+"]"  );
-    if (best_amp*100<40)
+    recog.html(best_id+32+" "+Math.floor((n-1) / 12-1) + " [" + str[(n+2) % 12] + "]   ["+Math.round(best * 100).toString() + "%, "+Math.round(best_amp*100)+"]"  );
+    if ((best_amp*100<30)||(best*100<60))
       recog.html("");
   }
   }
