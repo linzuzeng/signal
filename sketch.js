@@ -3,10 +3,13 @@ var mic, osc, fft, song, capture = false,
 var last_three=[0,0,0];
 var round_last = "";
 var captured=piano;
+var amp_trig=0;
 fft_f = 8192;
 low_f = 214.84375;
 length_f = 248;
-function checkthis(a){
+var spectrum_log_last=[];
+var record =[];
+function check_max(a){
   if (last_three[3]!=a)
   {
     last_three[1]=last_three[2];
@@ -94,24 +97,16 @@ function setup() {
       capture = !capture;
       if (capture){
         captured=[];
+	amp_trig=0;
       }
       else {
         result.html(JSON.stringify(captured));
+	prompt.html( 'Profile (DEFAULT:piano): ');
       }
     })
 
   noFill();
 
-  /*
-  mic = new p5.Oscillator(880*4);
-  mic.start();
-  mic.amp(1);
-
-  	mic1= new p5.Oscillator(440*4);
-  	mic1.start();
-  	mic1.amp(1);
-  	mic1.connect(mic);
-  	*/
   mic = new p5.AudioIn();
   mic.start();
   mic.disconnect();
@@ -128,20 +123,45 @@ function draw() {
   background(200);
 
   var spectrum = fft.analyze();
-  var spectrum_log = [];
-
+  var spectrum_log_now = [];
+  var spectrum_log= [];
   for (var i = low_f * fft_f / 22000, a = 0; i < spectrum.length; i *= Math.pow(2, 1 / length_f), a++) {
-    spectrum_log[a] = 0;
+    spectrum_log_now[a] = 0;
+    // energy
     for (b = Math.floor(i / Math.pow(2, 1 / length_f)); b <= Math.floor(i); b++)
-      if (spectrum[b] > spectrum_log[a])
-        spectrum_log[a] = spectrum[b] * spectrum[b] ;
-  }
-
+      if (spectrum[b] > spectrum_log_now[a])
+        spectrum_log_now[a] = spectrum[b] * spectrum[b] ;
+    //derivative
+    if (spectrum_log_last.length>=a)
+      spectrum_log[a] = spectrum_log_now[a]-spectrum_log_last[a];
+    else
+      spectrum_log[a] = spectrum_log_now[a];
+   
+   }
+     //quantify
+    var max_in_spectrum =1;
+    for (var i=0; i<spectrum_log.length; i++)
+        if (max_in_spectrum<spectrum_log[i])
+            max_in_spectrum=spectrum_log[i];
+    for (var a=0; a<spectrum_log.length; a++)
+    {
+        spectrum_log[a]=Math.floor(spectrum_log[a]/max_in_spectrum*spectrum_log_now[a]*1.3);
+        if (spectrum_log[a]<0) spectrum_log[a]=0;
+    }
+    
+  stroke("red");
   beginShape();
   for (var a = 0; a < spectrum_log.length; a++) {
     vertex(a, map(spectrum_log[a], 0, 256*256, height, 0));
   }
   endShape();
+   stroke("black");
+  beginShape();
+  for (var a = 0; a < spectrum_log.length; a++) {
+    vertex(a, map(spectrum_log_now[a], 0, 256*256, height, 0));
+  }
+  endShape();
+
 
   //draw note
   var offset_f = Math.floor(Math.log(55 / low_f) / Math.log(Math.pow(2, 1 / length_f)));
@@ -163,7 +183,7 @@ function draw() {
         {
           stroke("black");
           text("A", a + 3, 10);
-          stroke("red");
+          stroke("green");
           line(a, 0, a, map(spectrum_log[a], 0, 256*256, height, 0));
           break;
         }
@@ -178,8 +198,9 @@ function draw() {
   // amp trigger
   beginShape();
   for (var a = 0, n = 0; a < spectrum_log.length; n++, a = Math.floor(offset_f + length_f * n / 12)) {
-    for (var bb = a - Math.floor(length_f / 12) - 1; bb < a + Math.floor(length_f / 12) + 1; bb++) {
-      if ((spectrum_log[a] > (256 *256*3 / 4))) {
+    for (var bb = a - Math.floor(length_f / 12) - 1; 
+             bb < a + Math.floor(length_f / 12) + 1; bb++) {
+      if (spectrum_log[bb] >  256 *256*3 / 4) {
         if (spectrum_log[bb - length_f] > 256 *256* 3 / 4)
           break;
         if (spectrum_log[bb - length_f * 2] > 256 *256* 3 / 4)
@@ -187,42 +208,56 @@ function draw() {
         got_freq.add(n);
       }
     }
+
     if (spectrum_log[a] > 256 *256* 3 / 4) {
-      stroke("red");
+      stroke("purple");
       line(a, 0, a, map(spectrum_log[a], 0, 256*256, height, 0));
     }
   }
+
+
   if (got_freq.size==0)
-  {
       osc.amp(0);
-  }
   else{
     //osc.amp(1);
     var lowest = 2147483648;
     got_freq.forEach(function(n) {
-      round_this +=  str[(n+21) % 12]+ " [" + Math.floor((n+21) / 12) + "] ";
-      if (lowest>n){
+      round_this +=  str[(n+21) % 12]+ " [" + Math.floor((n+21) / 12) + "] " ;
+     if (lowest>n){
         lowest=n;
       }
       osc.freq(Math.round(440*Math.pow(2,(lowest-30)/12)));
     });
   }
+  var triggered = false;
   if ((round_last != round_this) )
-    notes.html(round_this);
+    {
+	if (capture) {
+		if (round_last=="")
+		{
+			amp_trig++;
+			triggered=true;
+			prompt.html( 'Profile (triggered'+amp_trig.toString()+' times.): ');
+
+		}
+	}
+	notes.html(round_this);
+  }
+
   round_last = round_this;
   endShape();
 
   // capture
 
   if (capture) {
-    if (checkthis(max(spectrum_log)))
+    if (triggered)//use ACTUALL Signal to capture
       {
         captured[capture_t++]=spectrum_log;
         console.log(capture_t);
       }
   }else {
 
-   if (checkthis(max(spectrum_log)))
+   //if (checkthis(max(spectrum_log)))
       {
     var best=-1;
     var best_id=0;
@@ -240,10 +275,10 @@ function draw() {
     var n=best_id+32;
 
     recog.html(best_id+32+" "+ str[(n-1) % 12]  + " [" +Math.floor((n-1) / 12-1)+ "]   ["+Math.round(best * 100).toString() + "%, "+Math.round(best_amp*100)+"]"  );
-    if ((best_amp*100<30)||(best*100<60))
+    if ((best_amp*100<5)||(best*100<30))
       recog.html("");
   }
   }
-
+  spectrum_log_last=spectrum_log_now;
 
 }
