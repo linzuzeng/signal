@@ -26,3 +26,9 @@ target.forEach(function(n){
 captured=new_instrument;
 result.html(JSON.stringify(new_instrument));
 console.log(new_num);
+for (var i=0;i<captured.length;i++)
+{var tot=0
+ for (var b=0;b<captured.length;b++)
+	tot+=Math.floor(mulitply1(captured[i],captured[b]).like*100)
+  console.log(i.toString()+"   "+(tot-100).toString());
+}
