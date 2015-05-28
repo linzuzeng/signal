@@ -14,6 +14,8 @@ var amp_per_note_last ={};
 var record_start_time;
 var record =[];
 var timerlist=[];
+
+var kill=[];
 function check_max(a){
 	if (last_three[3]!=a)
 	{
@@ -87,8 +89,9 @@ function setup() {
 	button.mousePressed(startstop);
 	createElement('h', 'File:');
 	createFileInput(handleFiles);
-	prompt = createElement('h', 'Profile (DEFAULT:piano): ');
-	button_capture = createButton("Capture")
+	
+	//prompt = createElement('h', 'Profile (DEFAULT:piano): ');
+	//button_capture = createButton("Capture")
 	createElement('h', 'Record: ');
 	button_mode = createButton("Record");
 	button_mode.mousePressed(function(){
@@ -96,6 +99,7 @@ function setup() {
 		if (recording){
 			button_mode.html('Stop');
 			record=[];
+			result.html("--");
 			timestamp=0;
 			record_start_time= Math.floor(performance.now());
 		}
@@ -107,8 +111,8 @@ function setup() {
 	createElement('h', 'Identified notes: ');
 	linear_identify = createElement('h', '--');
 	createElement('br');
-	createElement('i', 'High-amp notes: ');
-	amp_identify = createElement('i', ' (amp-method, may be incorrect) ');
+	createElement('h', 'High-amp notes: ');
+	amp_identify = createElement('h', ' (amp-method, may be incorrect) ');
 	createElement('br');
 
 	createElement('br');
@@ -141,7 +145,7 @@ function setup() {
 	
 	
 	result = createElement('h', '--');
-	button_capture.mousePressed(function(){
+	/*button_capture.mousePressed(function(){
 		capture = !capture;
 		if (capture){
 			captured=[];
@@ -152,7 +156,7 @@ function setup() {
 			prompt.html( 'Profile (DEFAULT:piano): ');
 		}
 	});
-
+*/
 	noFill();
 
 	mic = new p5.AudioIn();
@@ -164,7 +168,7 @@ function setup() {
 }
 
 function draw() {
-	
+
 	//caculate spectrum
 	var spectrum = fft.analyze();
 	var spectrum_log_now = [];
@@ -249,19 +253,19 @@ function draw() {
 				break;
 			}
 	// caculate got frequency
-	var probablity = [];
+	var probability = [];
 	for (var i=0; i<400 ;i++) 
 	{
-		probablity[i]=0;
+		probability[i]=0;
 		if (got_freq.has(i))
 		{
-			probablity[i]++;
+			probability[i]++;
 			if ( got_freq.has(i+24))
-				probablity[i]++;
+				probability[i]++;
 			if ( got_freq.has(i+12+7))
-				probablity[i]++;
+				probability[i]++;
 			if ( got_freq.has(i+12))
-				probablity[i]++;
+				probability[i]++;
 		}
 	}
 	// show got frequency
@@ -270,7 +274,7 @@ function draw() {
 	{
 		var lowest = 2147483648;
 		got_freq.forEach(function(n) {
-			round_this +=  str[(n-12-1) % 12]+ " [" + Math.floor((n-12-1) / 12) + "] {prob: "+probablity[n]+"}" ;
+			round_this +=  str[(n-12-1) % 12]+ " [" + Math.floor((n-12-1) / 12) + "] /"+probability[n]+"/  " ;
 			if (lowest>n)
 				lowest=n;
 		});
@@ -290,22 +294,44 @@ function draw() {
 	}
 	round_last = round_this;
 	
-	var best_id=-1;
+	//dies out
+	for (var n=0; n<kill.length ;n++)
+	{
+		if (kill[n])
+		{
+			if (kill[n]>0)
+				kill[n]--;
+		}
+		else
+		{
+			kill[n]=0;
+		}
+	}
+	// get best fitted note	
+	var best_n=-1;
+	var best_times=0;
+	for (var n=0; n<probability.length ;n++)
+	{
+		
+		if ((best_times<probability[n]) )
+		{
+			best_n=n;
+			best_times=probability[n];
+		}
+	}
+	if (kill[best_n]>0)
+		best_n=-1;
+	if (best_n!=-1 )
+		linear_identify.html(str[(best_n-12-1) % 12]+ " [" + Math.floor((best_n-12-1) / 12) + "]");
+	
+	kill[best_n]=0;
+	for (var n=0; n<kill.length ;n++)
+	{
+		if (probability[n]>0)
+			kill[n]=5;
+	}
 	if (triggered)
 	{
-		// get best fitted note		
-		var best_times=0;
-		for (var n=0; n<probablity.length ;n++)
-		{
-			if (best_times<probablity[n])
-			{
-				best_id=n-32;
-				best_times=probablity[n];
-			}
-		}
-		if (best_id!=-1)
-			console.log("found"+(best_id+32).toString());
-	
 		// capture note spectrum
 		if (capture) {
 				captured[capture_t++]=spectrum_log;
@@ -319,11 +345,11 @@ function draw() {
 
 	// record
 	if ((!capture) && recording)  
-		if (best_id!=-1){
-			var n=best_id+32;
+		if (best_n!=-1){
+			var n=best_n;
 			record[record.length]={
 				time:Math.floor(performance.now())-record_start_time,
-				note:best_id+32
+				note:best_n
 			};
 			result.html(result.html()+" ~ "+str[(n-12-1) % 12]  + " [" +Math.floor((n-12-1) / 12)+ "] " );
 	}
