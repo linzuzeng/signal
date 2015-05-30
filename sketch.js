@@ -10,7 +10,7 @@ var mic, fft, song, capture = false,
   capture_t = 0,recording=false,playing=false;
 var last_three=[0,0,0];
 var round_last = "";
-var captured=piano;
+var captured=[];
 var amp_trig=0;
 trigger_amp=2/5;
 harmonic_filter=20;
@@ -28,6 +28,7 @@ var play_record_id=0;
 var timer;
 var kill=new Int8Array(max_n);
 var str = ["1", "1#", "2", "2#", "3", "4", "4#", "5", "5#","6", "6#", "7" ];
+var str_2 = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#","A", "A#", "B" ];
 var record_result="";
 var lastX=null;
 function touchStarted() {
@@ -35,15 +36,14 @@ function touchStarted() {
 	lastX=null;
 }
 function touchEnded() {
-	start_a=start_a_old+lastX-touchX;
+	if (!(lastX==null))
+		start_a=start_a_old+lastX-touchX;
 	lastX=null;
 }
 function touchMoved() {
-	ellipse(touchX, touchY, 5, 5);
 	if (lastX==null)
 		lastX=touchX;
 	start_a=start_a_old+lastX-touchX;
-	return false;
 }
 function check_max(a){
 	if (last_three[3]!=a)
@@ -116,8 +116,10 @@ function playnote()
 {
 	while ((play_record_id<record.length) &&(record[play_record_id].time<performance.now()-record_start_time))
 	{
-		notes[record[play_record_id].note].amp(record[play_record_id].amp/(256*256));
-		notes[record[play_record_id].note].play();
+		if (record[play_record_id].time>performance.now()-record_start_time-40){ // force sync
+			notes[record[play_record_id].note].amp(record[play_record_id].amp/(256*256));
+			notes[record[play_record_id].note].play();
+		}
 		play_record_id++;
 	}
 	if (play_record_id>=record.length) 
@@ -186,7 +188,7 @@ function setup() {
 			
 			play_record_id=0;
 			record_start_time= Math.floor(performance.now());
-			setInterval(playnote,10);
+			timer=setInterval(playnote,10);
 		}
 		else
 		{
