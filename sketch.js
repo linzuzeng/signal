@@ -1,8 +1,9 @@
 var fft_s = 8192;
 var low_n = 32; // bounded with notes
-var max_n = 120; 
-var std_length_a = 12*24*2;//pxiels
-start_a = 120;
+var max_n = 108; 
+var std_length_a = 12*12*4;//pxiels
+start_a = 800;
+start_a_old = 800;
 // low_f = Math.floor(440*Math.pow(2,(low_n-70)/12));
 
 var mic, fft, song, capture = false,
@@ -28,6 +29,22 @@ var timer;
 var kill=new Int8Array(max_n);
 var str = ["1", "1#", "2", "2#", "3", "4", "4#", "5", "5#","6", "6#", "7" ];
 var record_result="";
+var lastX=null;
+function touchStarted() {
+	start_a_old =start_a;
+	lastX=null;
+}
+function touchEnded() {
+	start_a=start_a_old+lastX-touchX;
+	lastX=null;
+}
+function touchMoved() {
+	ellipse(touchX, touchY, 5, 5);
+	if (lastX==null)
+		lastX=touchX;
+	start_a=start_a_old+lastX-touchX;
+	return false;
+}
 function check_max(a){
 	if (last_three[3]!=a)
 	{
@@ -99,10 +116,8 @@ function playnote()
 {
 	while ((play_record_id<record.length) &&(record[play_record_id].time<performance.now()-record_start_time))
 	{
-
-		var i=play_record_id;
-		notes[record[i].note].amp(record[i].amp/(256*256));
-		notes[record[i].note].play();
+		notes[record[play_record_id].note].amp(record[play_record_id].amp/(256*256));
+		notes[record[play_record_id].note].play();
 		play_record_id++;
 	}
 	if (play_record_id>=record.length) 
@@ -181,7 +196,7 @@ function setup() {
 		}	
 	});
 	
-	
+	silder=createSlider(-100,500,0);
 	result = createElement('h', '--');
 	/*button_capture.mousePressed(function(){
 		capture = !capture;
@@ -196,7 +211,8 @@ function setup() {
 	});
 	*/
 	noFill();
-
+	
+	
 	mic = new p5.AudioIn();
 	mic.start();
 	mic.disconnect();
@@ -207,6 +223,7 @@ function setup() {
 }
 
 function draw() {
+
 	//caculate spectrum
 	var spectrum = fft.analyze();
 
@@ -364,7 +381,7 @@ function draw() {
 					stroke("black");
 					text((Math.floor(n/12)+2).toString(), p -start_a+ 3, 10);
 					stroke("blue");
-					line(p-start_a, 0, p-start_a, map(spectrum_log[p-start_a], 0, 256*256, height, 0));
+					line(p-start_a, 0, p-start_a, height);
 					break;
 				}
 				case 0:
@@ -372,7 +389,7 @@ function draw() {
 					stroke("black");
 					text("A", p-start_a + 3, 10);
 					stroke("green");
-					line(p-start_a, 0, p-start_a, map(spectrum_log[p-start_a], 0, 256*256, height, 0));
+					line(p-start_a, 0, p-start_a, height);
 					break;
 				}
 			}
@@ -393,5 +410,4 @@ function draw() {
 		strokeWeight(1);
 		endShape();
 	};
-
 }
