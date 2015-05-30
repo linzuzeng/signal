@@ -852,7 +852,7 @@
     if (this.elt.parentNode) {
       this.elt.parentNode.removeChild(this.elt);
     }
-    delete(this);
+    //delete(this);
   };
 
 
