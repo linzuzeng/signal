@@ -1,3 +1,4 @@
+var fft_analyzer= (function(){
 var fft_s = 8192;
 var low_n = 32; // bounded with notes
 var max_n = 108; 
@@ -27,24 +28,32 @@ var record =[];
 var play_record_id=0;
 var timer;
 var kill=new Int8Array(max_n);
-var str = ["1", "1#", "2", "2#", "3", "4", "4#", "5", "5#","6", "6#", "7" ];
+var str_1 = ["1", "1#", "2", "2#", "3", "4", "4#", "5", "5#","6", "6#", "7" ];
 var str_2 = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#","A", "A#", "B" ];
 var record_result="";
 var lastX=null;
-function touchStarted() {
+touchStarted = function () {
 	start_a_old =start_a;
 	lastX=null;
-}
-function touchEnded() {
+};
+touchEnded = function () {
 	if (!(lastX==null))
 		start_a=start_a_old+lastX-touchX;
 	lastX=null;
-}
-function touchMoved() {
+};
+touchMoved = function () {
 	if (lastX==null)
 		lastX=touchX;
 	start_a=start_a_old+lastX-touchX;
-}
+};
+preload = function () {
+	notes=[]
+	// Load a sound file
+	song = new p5.SoundFile(""); // DANGER!
+	
+	for (var i=32;i<=108;i++)
+		notes[i]=new p5.SoundFile("./sound/"+i.toString()+".ogg");
+};
 function check_max(a){
 	if (last_three[3]!=a)
 	{
@@ -53,7 +62,7 @@ function check_max(a){
 		last_three[3]=a;
 		return (last_three[2]>last_three[1])&&(last_three[2]>last_three[3]);
 	}
-}
+};
 function mulitply1(a, standard) {
 	if (standard) {
 		var total1 = 0, base1 = 0, base2 = 0;
@@ -80,14 +89,7 @@ function mulitply1(a, standard) {
 }
 
 
-function preload() {
-	notes=[]
-	// Load a sound file
-	song = new p5.SoundFile(""); // DANGER!
-	
-	for (var i=32;i<=108;i++)
-		notes[i]=new p5.SoundFile("./sound/"+i.toString()+".ogg");
-}
+
 
 function startstop() {
 	if (!song.isLoaded()) {
@@ -130,7 +132,7 @@ function playnote()
 		loop();
 	}	
 }
-function setup() {
+setup = function () {
 	createElement('h2', 'Homework for Signal & Systems - FFT spectrum analyzer');
 	createElement('h', 'Input:');
 	button = createButton('mic');
@@ -222,9 +224,9 @@ function setup() {
 	fft = new p5.FFT(0, fft_s);
 	fft.setInput(mic);
 
-}
+};
 
-function draw() {
+draw = function () {
 
 	//caculate spectrum
 	var spectrum = fft.analyze();
@@ -294,7 +296,7 @@ function draw() {
 	{
 		got_freq.forEach(function(n) {
 			if (!kill[n])
-				round_this +=  str[(n-12-1) % 12]+ " [" + Math.floor((n-12-1) / 12) + "] /"+got_freq_probability[n]+"/  " ;
+				round_this +=  str_1[(n-12-1) % 12]+ " [" + Math.floor((n-12-1) / 12) + "] /"+got_freq_probability[n]+"/  " ;
 			else
 				if (n==best_n)
 					best_n=-1;
@@ -327,7 +329,7 @@ function draw() {
 		kill[best_n+12]=8;
 		kill[best_n+12+7]=8;
 		kill[best_n+12+12]=8;
-		linear_identify.html(str[(best_n-12-1) % 12]+ " [" + Math.floor((best_n-12-1) / 12) + "]");
+		linear_identify.html(str_1[(best_n-12-1) % 12]+ " [" + Math.floor((best_n-12-1) / 12) + "]");
 	}
 	// CANON specical trick!!!
 	if ((best_n-12-1) / 12<=3)
@@ -354,7 +356,7 @@ function draw() {
 				note:best_n,
 				amp:got_freq_amp[n]
 			};
-			record_result+=" ~ "+str[(n-12-1) % 12]  + " [" +Math.floor((n-12-1) / 12)+ "] ";
+			record_result+=" ~ "+str_1[(n-12-1) % 12]  + " [" +Math.floor((n-12-1) / 12)+ "] ";
 			result.html(record_result);
 	}
 /////////////////////////////////////////////////////////////////////////
@@ -396,7 +398,7 @@ function draw() {
 				}
 			}
 			stroke("black");
-			text(str[(n+21) % 12], p-start_a + 3, 30);
+			text(str_1[(n+21) % 12], p-start_a + 3, 30);
 			stroke("white");
 			line(p-start_a, 0, p-start_a, 100);
 		}
@@ -412,4 +414,5 @@ function draw() {
 		strokeWeight(1);
 		endShape();
 	};
-}
+};
+})();
