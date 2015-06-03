@@ -22,6 +22,7 @@ var spectrum_log = new Int32Array(spectrum_log_length);
 var got_freq_probability=new Int32Array(max_n);
 var got_freq_amp = new Int32Array(max_n);
 var got_freq = new Set();
+var kill_max=3;
 var amp_per_note_last ={};
 var record_start_time;
 var record =[];
@@ -127,7 +128,7 @@ function handleFiles(files) {
 	//song.setPath(files.data);
 	file_polling = setInterval (function (){
 		if  (song.isLoaded()){
-			button.html("file is ready");
+			button.html("click to play");
 			clearInterval(file_polling);
 		}
 	},100)
@@ -144,6 +145,7 @@ function playnote()
 			record[play_record_id].play.play();
 		}
 		play_record_id++;
+
 	}
 	if (play_record_id>=record.length)
 	{
@@ -199,15 +201,17 @@ setup = function () {
 	createElement('i', 'High amplitude notes: ');
 	amp_identify = createElement('i', ' (may be incorrect) ');
 	createElement('br');
-
-	createElement('br');
 	createElement('br');
 	canvas=createCanvas(1200, 500);
 	createElement('br');
 	createElement('br');
 	button_play = createButton("Play");
 	button_play.mousePressed(function(){
-
+		if (recording)
+			{
+			alert("Stop record first!");
+			return;
+			}
 		if (record.length<=0)
 			alert("No record!");
 		else
@@ -215,8 +219,8 @@ setup = function () {
 
 		if (playing){
 			noLoop();
-			button_play.html('Stop');
 			recording=false;
+			button_play.html('Stop');
 
 			play_record_id=0;
 			record_start_time= Math.floor(performance.now());
@@ -231,6 +235,11 @@ setup = function () {
 	});
 
 	silder=createSlider(0,10,3);
+	silder.mousePressed(function(){
+		kill_max= silder.value();
+		console.log(kill_max);
+	});
+	 
 	result = createElement('h', '--');
 	/*button_capture.mousePressed(function(){
 		capture = !capture;
@@ -351,7 +360,7 @@ draw = function () {
 			kill[n]--;
 
 	linear_identify.html("");
-	var kill_max= silder.value();
+	
 	// note truly pressed
 	if (best_n.size>0)
 		best_n.forEach(function(best_n_this) {
@@ -377,8 +386,8 @@ draw = function () {
 		if ((best_n_this-12-1) / 12<=3)
 			best_n.delete(best_n_this);
 		// 1945 specical trick!!!
-		/*if ((best_n-12-1) / 12>7)
-			best_n.delete(best_n_this);*/
+		//if ((best_n-12-1) / 12>7)
+		//	best_n.delete(best_n_this);
 	});
 	// record
 	if ((!capture) && recording)
@@ -395,7 +404,6 @@ draw = function () {
 			});
 			result.html(showrecord());
 	}
-/////////////////////////////////////////////////////////////////////////
 
 	if (!recording){
 		// draw spectrum

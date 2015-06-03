@@ -1,4 +1,4 @@
-/*! p5.sound.js v0.2.11 2015-06-01 */
+/*! p5.sound.js v0.2.12 2015-06-04 */
 (function (root, factory) {
   if (typeof define === 'function' && define.amd)
     define('p5.sound', ['p5'], function (p5) { (factory(p5));});
@@ -2239,7 +2239,7 @@ fft = function () {
    *    strokeWeight(1);
    *    for (var i = 0; i< waveform.length; i++){
    *      var x = map(i, 0, waveform.length, 0, width);
-   *      var y = map( waveform[i], -1, 1, 0, height);
+   *      var y = map( waveform[i], 0, 255, 0, height);
    *      vertex(x,y);
    *    }
    *    endShape();
@@ -2259,13 +2259,15 @@ fft = function () {
    *  </code></div>
    */
   p5.FFT = function (smoothing, bins) {
-    this.smoothing = smoothing || 0.8;
-    this.bins = bins || 1024;
+    var SMOOTHING = smoothing || 0.8;
+    if (smoothing === 0) {
+      SMOOTHING = smoothing;
+    }
     var FFT_SIZE = bins * 2 || 2048;
     this.input = this.analyser = p5sound.audiocontext.createAnalyser();
-    // default connections to p5sound fftMeter
-    p5sound.fftMeter.connect(this.analyser);
-    this.analyser.smoothingTimeConstant = this.smoothing;
+    // default connections to p5sound master
+    p5sound.output.connect(this.analyser);
+    this.analyser.smoothingTimeConstant = SMOOTHING;
     this.analyser.fftSize = FFT_SIZE;
     this.freqDomain = new Uint8Array(this.analyser.frequencyBinCount);
     this.timeDomain = new Uint8Array(this.analyser.frequencyBinCount);
@@ -2297,21 +2299,20 @@ fft = function () {
    *
    *  @method  setInput
    *  @param {Object} [source] p5.sound object (or web audio API source node)
+   *  @param {Number} [bins]  Must be a power of two between 16 and 1024
    */
-  p5.FFT.prototype.setInput = function (source) {
-    if (!source) {
-      p5sound.fftMeter.connect(this.analyser);
+  p5.FFT.prototype.setInput = function (source, bins) {
+    if (bins) {
+      this.analyser.fftSize = bins * 2;
+    }
+    if (source.output) {
+      source.output.connect(this.analyser);
     } else {
-      if (source.output) {
-        source.output.connect(this.analyser);
-      } else if (source.connect) {
-        source.connect(this.analyser);
-      }
-      p5sound.fftMeter.disconnect();
+      source.connect(this.analyser);
     }
   };
   /**
-   *  Returns an array of amplitude values (between -1.0 and +1.0) that represent
+   *  Returns an array of amplitude values (between 0-255) that represent
    *  a snapshot of amplitude readings in a single buffer. Length will be
    *  equal to bins (defaults to 1024). Can be used to draw the waveform
    *  of a sound. 
@@ -2319,39 +2320,19 @@ fft = function () {
    *  @method waveform
    *  @param {Number} [bins]    Must be a power of two between
    *                            16 and 1024. Defaults to 1024.
-   *  @param {String} [precision] If any value is provided, will return results
-   *                              in a Float32 Array which is more precise
-   *                              than a regular array.
-   *  @return {Array}  Array    Array of amplitude values (-1 to 1)
+   *  @return {Array}  Array    Array of amplitude values (0-255)
    *                            over time. Array length = bins.
    *
    */
-  p5.FFT.prototype.waveform = function () {
-    var bins, mode, normalArray;
-    for (var i = 0; i < arguments.length; i++) {
-      if (typeof arguments[i] === 'number') {
-        bins = arguments[i];
-        this.analyser.fftSize = bins * 2;
-      }
-      if (typeof arguments[i] === 'string') {
-        mode = arguments[i];
-      }
+  p5.FFT.prototype.waveform = function (bins) {
+    if (bins) {
+      this.analyser.fftSize = bins * 2;
     }
-    // getFloatFrequencyData doesnt work in Safari as of 5/2015
-    if (mode && !p5.prototype._isSafari()) {
-      timeToFloat(this, this.timeDomain);
-      this.analyser.getFloatTimeDomainData(this.timeDomain);
-      return this.timeDomain;
-    } else {
-      timeToInt(this, this.timeDomain);
-      this.analyser.getByteTimeDomainData(this.timeDomain);
-      var normalArray = new Array();
-      for (var i = 0; i < this.timeDomain.length; i++) {
-        var scaled = p5.prototype.map(this.timeDomain[i], 0, 255, -1, 1);
-        normalArray.push(scaled);
-      }
-      return normalArray;
-    }
+    this.analyser.getByteTimeDomainData(this.timeDomain);
+    var normalArray = Array.apply([], this.timeDomain);
+    normalArray.length === this.analyser.fftSize;
+    normalArray.constructor === Array;
+    return normalArray;
   };
   /**
    *  Returns an array of amplitude values (between 0 and 255)
@@ -2365,10 +2346,6 @@ fft = function () {
    *  @method analyze
    *  @param {Number} [bins]    Must be a power of two between
    *                             16 and 1024. Defaults to 1024.
-   *  @param {Number} [scale]    If "dB," returns decibel
-   *                             float measurements between
-   *                             -140 and 0 (max).
-   *                             Otherwise returns integers from 0-255.
    *  @return {Array} spectrum    Array of energy (amplitude/volume)
    *                              values across the frequency spectrum.
    *                              Lowest energy (silence) = 0, highest
@@ -2421,29 +2398,15 @@ fft = function () {
    *                                   
    *
    */
-  p5.FFT.prototype.analyze = function () {
-    var bins, mode;
-    for (var i = 0; i < arguments.length; i++) {
-      if (typeof arguments[i] === 'number') {
-        bins = this.bins = arguments[i];
-        this.analyser.fftSize = this.bins * 2;
-      }
-      if (typeof arguments[i] === 'string') {
-        mode = arguments[i];
-      }
+  p5.FFT.prototype.analyze = function (bins) {
+    if (bins) {
+      this.analyser.fftSize = bins * 2;
     }
-    if (mode && mode.toLowerCase() === 'db') {
-      freqToFloat(this);
-      this.analyser.getFloatFrequencyData(this.freqDomain);
-      return this.freqDomain;
-    } else {
-      freqToInt(this, this.freqDomain);
-      this.analyser.getByteFrequencyData(this.freqDomain);
-      var normalArray = Array.apply([], this.freqDomain);
-      normalArray.length === this.analyser.fftSize;
-      normalArray.constructor === Array;
-      return normalArray;
-    }
+    this.analyser.getByteFrequencyData(this.freqDomain);
+    var normalArray = Array.apply([], this.freqDomain);
+    normalArray.length === this.analyser.fftSize;
+    normalArray.constructor === Array;
+    return normalArray;
   };
   /**
    *  Returns the amount of energy (volume) at a specific
@@ -2533,31 +2496,7 @@ fft = function () {
    *                               Defaults to 0.8.
    */
   p5.FFT.prototype.smooth = function (s) {
-    if (s) {
-      this.smoothing = s;
-    }
     this.analyser.smoothingTimeConstant = s;
-  };
-  // helper methods to convert type from float (dB) to int (0-255)
-  var freqToFloat = function (fft) {
-    if (fft.freqDomain instanceof Float32Array === false) {
-      fft.freqDomain = new Float32Array(fft.analyser.frequencyBinCount);
-    }
-  };
-  var freqToInt = function (fft) {
-    if (fft.freqDomain instanceof Uint8Array === false) {
-      fft.freqDomain = new Uint8Array(fft.analyser.frequencyBinCount);
-    }
-  };
-  var timeToFloat = function (fft) {
-    if (fft.timeDomain instanceof Float32Array === false) {
-      fft.timeDomain = new Float32Array(fft.analyser.frequencyBinCount);
-    }
-  };
-  var timeToInt = function (fft) {
-    if (fft.timeDomain instanceof Uint8Array === false) {
-      fft.timeDomain = new Uint8Array(fft.analyser.frequencyBinCount);
-    }
   };
 }(master);
 /** Tone.js module by Yotam Mann, MIT License 2014  http://opensource.org/licenses/MIT **/
@@ -6860,10 +6799,134 @@ peakdetect = function () {
     };
   };
 }(master);
+var gain;
+gain = function () {
+  'use strict';
+  var p5sound = master;
+  /**
+    *  A gain node is usefull to set the relative volume of sound.
+    *  It's typically used to build mixers.	  
+    *
+    *  @class p5.Gain
+    *  @constructor
+    *  @example
+    *  <div><code>
+   *
+   *	// load two soundfile and crossfade beetween them
+   *	var sound1,sound2;
+   *	var gain1, gain2, gain3;
+   *	
+   *	function preload(){
+  	*		soundFormats('ogg', 'mp3');
+  	*		sound1 = loadSound('../_files/Damscray_-_Dancing_Tiger_01');
+  	*		sound2 = loadSound('../_files/beat.mp3');
+   *	}
+   *
+   *	function setup() {
+  	*		createCanvas(400,200);
+   *
+  	*		// create a 'master' gain to which we will connect both soundfiles
+  	*		gain3 = new p5.Gain();
+  	*		gain3.connect();
+   *
+  	*		// setup first sound for playing
+  	*		sound1.rate(1);
+  	*		sound1.loop();
+  	*		sound1.disconnect(); // diconnect from p5 output
+   *
+  	*		gain1 = new p5.Gain(); // setup a gain node
+  	*		gain1.setInput(sound1); // connect the first sound to its input
+  	*		gain1.connect(gain3); // connect its output to the 'master'
+   *
+  	*		sound2.rate(1);
+  	*		sound2.disconnect();
+  	*		sound2.loop();
+   *
+  	*		gain2 = new p5.Gain();
+  	*		gain2.setInput(sound2);
+  	*		gain2.connect(gain3);
+   *
+   *	}
+   *
+   *	function draw(){
+    *		background(180);
+   *  
+  	*		// calculate the horizontal distance beetween the mouse and the right of the screen
+  	*		var d = dist(mouseX,0,width,0);
+   *
+  	*		// map the horizontal position of the mouse to values useable for volume control of sound1
+  	*		var vol1 = map(mouseX,0,width,0,1); 
+  	*		var vol2 = 1-vol1; // when sound1 is loud, sound2 is quiet and vice versa
+   *
+  	*		gain1.amp(vol1,0.5,0);
+  	*		gain2.amp(vol2,0.5,0);
+   *
+  	*		// map the vertical position of the mouse to values useable for 'master volume control'
+  	*		var vol3 = map(mouseY,0,height,0,1); 
+  	*		gain3.amp(vol3,0.5,0);
+   	*	}
+   	*</code></div>
+   	*
+   	*/
+  p5.Gain = function () {
+    this.ac = p5sound.audiocontext;
+    this.input = this.ac.createGain();
+    this.output = this.ac.createGain();
+    // otherwise, Safari distorts
+    this.input.gain.value = 0.5;
+    this.input.connect(this.output);
+  };
+  /**
+   *  Connect a source to the gain node.
+   *  
+   *  @method  setInput
+   *  @param  {Object} src     p5.sound / Web Audio object with a sound
+   *                           output.
+   */
+  p5.Gain.prototype.setInput = function (src) {
+    src.connect(this.input);
+  };
+  /**
+   *  Send output to a p5.sound or web audio object
+   *  
+   *  @method  connect
+   *  @param  {Object} unit
+   */
+  p5.Gain.prototype.connect = function (unit) {
+    var u = unit || p5.soundOut.input;
+    this.output.connect(u.input ? u.input : u);
+  };
+  /**
+   *  Disconnect all output.
+   *  
+   *  @method disconnect
+   */
+  p5.Gain.prototype.disconnect = function () {
+    this.output.disconnect();
+  };
+  /**
+   *  Set the output level of the gain node.
+   *  
+   *  @method  amp
+   *  @param  {Number} volume amplitude between 0 and 1.0
+   *  @param  {Number} [rampTime] create a fade that lasts rampTime 
+   *  @param  {Number} [timeFromNow] schedule this event to happen
+   *                                seconds from now
+   */
+  p5.Gain.prototype.amp = function (vol, rampTime, tFromNow) {
+    var rampTime = rampTime || 0;
+    var tFromNow = tFromNow || 0;
+    var now = p5sound.audiocontext.currentTime;
+    var currentVol = this.output.gain.value;
+    this.output.gain.cancelScheduledValues(now);
+    this.output.gain.linearRampToValueAtTime(currentVol, now + tFromNow);
+    this.output.gain.linearRampToValueAtTime(vol, now + tFromNow + rampTime);
+  };
+}(master, sndcore);
 var src_app;
 src_app = function () {
   'use strict';
   var p5SOUND = sndcore;
   return p5SOUND;
-}(sndcore, master, helpers, panner, soundfile, amplitude, fft, signal, oscillator, env, pulse, noise, audioin, filter, delay, reverb, metro, looper, soundRecorder, peakdetect);
+}(sndcore, master, helpers, panner, soundfile, amplitude, fft, signal, oscillator, env, pulse, noise, audioin, filter, delay, reverb, metro, looper, soundRecorder, peakdetect, gain);
 }));
