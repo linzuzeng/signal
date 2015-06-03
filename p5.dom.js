@@ -301,7 +301,9 @@
         elt.multiple = 'multiple';
       }
      
+      // Now let's handle when a file was selected
       
+
       // Function to handle when a file is selected
       // We're simplifying life and assuming that we always
       // want to load every selected file
@@ -331,9 +333,7 @@
           }
         }
       }
-      // Now let's handle when a file was selected
       elt.addEventListener('change', handleFileSelect, false);
-
       return addElement(elt, this);
     } else {
       console.log('The File APIs are not fully supported in this browser. Cannot create element.');
@@ -852,7 +852,7 @@
     if (this.elt.parentNode) {
       this.elt.parentNode.removeChild(this.elt);
     }
-    delete(this);
+    //delete(this);
   };
 
 

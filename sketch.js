@@ -1,7 +1,7 @@
 var fft_analyzer= (function(){
 var fft_s = 8192;
 var low_n = 32; // bounded with notes
-var max_n = 108; 
+var max_n = 108;
 var std_length_a = 12*12*4;//pxiels
 start_a = 800;
 start_a_old = 800;
@@ -15,13 +15,13 @@ var captured=[];
 var amp_trig=0;
 trigger_amp=2/5;
 harmonic_filter=20;
-var spectrum_log_length=Math.ceil(Math.log(22000/           Math.floor(440*Math.pow(2,(low_n-70)/12))        )/Math.log(2)*std_length_a);
+var spectrum_log_length=Math.ceil(Math.log(22000/      Math.floor(440*Math.pow(2,(low_n-70)/12))       )/Math.log(2)*std_length_a);
 var spectrum_log_last = new Int32Array(spectrum_log_length);
 var spectrum_log_now = new Int32Array(spectrum_log_length);
 var spectrum_log = new Int32Array(spectrum_log_length);
 var got_freq_probability=new Int32Array(max_n);
 var got_freq_amp = new Int32Array(max_n);
-var got_freq = new Set(); 
+var got_freq = new Set();
 var amp_per_note_last ={};
 var record_start_time;
 var record =[];
@@ -50,7 +50,7 @@ preload = function () {
 	notes=[]
 	// Load a sound file
 	song = new p5.SoundFile(""); // DANGER!
-	
+
 	for (var i=32;i<=108;i++)
 		notes[i]=new p5.SoundFile("./sound/"+i.toString()+".ogg");
 };
@@ -77,7 +77,7 @@ function mulitply1(a, standard) {
 				base2=1e-6;
 		}
 		return  {
-				like:(total1 * total1) / (base1 * base2), 
+				like:(total1 * total1) / (base1 * base2),
 				amp:total1 / base1
 			};
 	} else {
@@ -92,54 +92,82 @@ function mulitply1(a, standard) {
 
 
 function startstop() {
-	if (!song.isLoaded()) {
-		button.html("mic");
+	if (song.isPlaying()) {
+		song.stop();
+		fileinput.hide();
 		fft.setInput(mic);
+		mic.connect(fft);
+		button.html("mic");
+		fileinput.hide();
 	} else {
-		if (song.isPlaying()) {
-			button.html("mic");
-			fft.setInput(mic);
-			mic.connect(fft);
-			song.stop();
-		} else {
-			button.html("file");
+		
+		if (song.isLoaded())
+		{
 			song.play();
 			fft.setInput(song);
 			mic.disconnect();
+			button.html("file");
+			fileinput.show();
+		}
+		else
+		{
+			button.html("file");
+			fileinput.show();
 		}
 	}
+
 }
 
 function handleFiles(files) {
-	song.setPath(files.data);
-	button.html("file/mic");
+
+	song.stop();
+	song=null;
+	song=loadSound(files.data);
+	button.html("loading...");
+	//song.setPath(files.data);
+	file_polling = setInterval (function (){
+		if  (song.isLoaded()){
+			button.html("file is ready");
+			clearInterval(file_polling);
+		}
+	},100)
+	
+
 }
 function playnote()
 {
 	while ((play_record_id<record.length) &&(record[play_record_id].time<performance.now()-record_start_time))
 	{
-		if (record[play_record_id].time>performance.now()-record_start_time-40){ // force sync
-			notes[record[play_record_id].note].amp(record[play_record_id].amp/(256*256));
-			notes[record[play_record_id].note].play();
+		if (record[play_record_id].time>performance.now()-record_start_time-50){ // force sync
+			record[play_record_id].play=notes[record[play_record_id].note];
+			record[play_record_id].play.amp(record[play_record_id].amp/(256*256));
+			record[play_record_id].play.play();
 		}
 		play_record_id++;
 	}
-	if (play_record_id>=record.length) 
+	if (play_record_id>=record.length)
 	{
 		clearInterval(timer);
 		playing=false;
 		button_play.html('Play');
 		loop();
-	}	
+	}
+}
+function showrecord()
+{
+	var record_result="";
+	record.forEach (function(rec_each){
+		record_result+=" ~ "+str_1[(rec_each.note-12-1) % 12]  + " [" +Math.floor((rec_each.note-12-1) / 12)+ "] ";
+	});
+	return record_result;
 }
 setup = function () {
-	createElement('h2', 'Homework for Signal & Systems - FFT spectrum analyzer');
+	createElement('h2', 'Music Analyzer - Homework for Signal & Systems');
 	createElement('h', 'Input:');
 	button = createButton('mic');
 	button.mousePressed(startstop);
-	createElement('h', 'File:');
-	createFileInput(handleFiles);
-	
+
+
 	//prompt = createElement('h', 'Profile (DEFAULT:piano): ');
 	//button_capture = createButton("Capture")
 	createElement('h', 'Record: ');
@@ -154,20 +182,22 @@ setup = function () {
 			record_result="";
 			timestamp=0;
 			record_start_time= Math.floor(performance.now());
-			
+
 		}
 		else {
 			canvas.show();
 			button_mode.html('Start');
-			
+
 		}
 	});
+	fileinput = createFileInput(handleFiles);
+	fileinput.hide();
 	createElement('br');
 	createElement('h', 'Identified notes: ');
 	linear_identify = createElement('h', '--');
 	createElement('br');
-	createElement('h', 'High-amp notes: ');
-	amp_identify = createElement('h', ' (amp-method, may be incorrect) ');
+	createElement('i', 'High amplitude notes: ');
+	amp_identify = createElement('i', ' (may be incorrect) ');
 	createElement('br');
 
 	createElement('br');
@@ -177,7 +207,7 @@ setup = function () {
 	createElement('br');
 	button_play = createButton("Play");
 	button_play.mousePressed(function(){
-		
+
 		if (record.length<=0)
 			alert("No record!");
 		else
@@ -187,7 +217,7 @@ setup = function () {
 			noLoop();
 			button_play.html('Stop');
 			recording=false;
-			
+
 			play_record_id=0;
 			record_start_time= Math.floor(performance.now());
 			timer=setInterval(playnote,10);
@@ -197,10 +227,10 @@ setup = function () {
 			button_play.html('Play');
 			clearInterval(timer);
 			loop();
-		}	
+		}
 	});
-	
-	silder=createSlider(-100,500,0);
+
+	silder=createSlider(0,10,3);
 	result = createElement('h', '--');
 	/*button_capture.mousePressed(function(){
 		capture = !capture;
@@ -215,8 +245,8 @@ setup = function () {
 	});
 	*/
 	noFill();
-	
-	
+
+
 	mic = new p5.AudioIn();
 	mic.start();
 	mic.disconnect();
@@ -239,7 +269,7 @@ draw = function () {
 			spectrum_log_now[a] = max(spectrum_log_now[a],spectrum[b] * spectrum[b]) ;
 		//derivative
 		spectrum_log[a] = spectrum_log_now[a]-spectrum_log_last[a];
-		
+
 	}
 	spectrum_log_last.set(spectrum_log_now); // !!!!!!!Profile needed!
 	//quantify
@@ -257,16 +287,16 @@ draw = function () {
 
 	// amp filter & harmonic filter
 	var weighted_freq= new Int8Array(spectrum_log.length);
-	for (var a = 0; a < spectrum_log.length; a++) 
+	for (var a = 0; a < spectrum_log.length; a++)
 		if (spectrum_log[a]>  256 * 256 * trigger_amp)
-			for (var har_freq=0, har_times=1; har_times<harmonic_filter;  
+			for (var har_freq=0, har_times=1; har_times<harmonic_filter;
 			har_freq=Math.floor(std_length_a*Math.log(++har_times)/Math.log(2)) )
 				if (max([spectrum_log[a-har_freq-1],spectrum_log[a-har_freq],spectrum_log[a-har_freq+1]])
 				>  256 * 256 * trigger_amp)
 					weighted_freq[a-har_freq]++;
 
 	//  allign frequecty to note & get best fitted note
-	var best_n=-1;
+	
 	var best_times=0;
 	got_freq.clear();
 	// BUG!!! offset_a may cause bug!!
@@ -275,34 +305,33 @@ draw = function () {
 		got_freq_probability[n]=0;
 		got_freq_amp[n]=0;
 		var a = Math.floor(offset_a + std_length_a * nn / 12);
-		for (var bb = a - Math.floor(std_length_a / (12*4)) - 1; 
-		bb < a + Math.floor(std_length_a / (12*4)) + 1; bb++) 
+		for (var bb = a - Math.floor(std_length_a / (12*4)) - 1;
+		bb < a + Math.floor(std_length_a / (12*4)) + 1; bb++)
 			if (weighted_freq[bb] >=1) {
 				got_freq.add(n);
 				got_freq_probability[n]=max(got_freq_probability[n],weighted_freq[bb]*weighted_freq[bb]*weighted_freq[bb]*spectrum_log_now[bb]);
 				got_freq_amp[n]=max(got_freq_amp[n],spectrum_log_now[bb]);
-				if ((best_times<got_freq_probability[n]) )
-				{
-					best_n=n;
-					best_times=got_freq_probability[n];
-				}
+				best_times=max(best_times,got_freq_probability[n]);
 			}
 	}
-	
 
-	// double check 
+
+	// double check
 	var round_this = "";
+	var best_n= new Set();
 	if (got_freq.size>0)
 	{
 		got_freq.forEach(function(n) {
 			if (!kill[n])
-				round_this +=  str_1[(n-12-1) % 12]+ " [" + Math.floor((n-12-1) / 12) + "] /"+got_freq_probability[n]+"/  " ;
-			else
-				if (n==best_n)
-					best_n=-1;
+			{
+				
+				round_this+=str_1[(n-12-1) % 12]+" [" + Math.floor((n-12-1) / 12) + "] /"+Math.round(got_freq_probability[n]/best_times*100)+"%/  " ;
+				if (got_freq_probability[n]>best_times*0.9)
+					best_n.add(n);
+			}
 		});
 	}
-	
+
 	// trigger
 	var triggered = false;
 	if (round_last != round_this)
@@ -315,28 +344,26 @@ draw = function () {
 		amp_identify.html(round_this);
 	}
 	round_last = round_this;
-	
+
 	// dies out in time
 	for (var n=0; n<kill.length ;n++)
 		if (kill[n])
 			kill[n]--;
-	
-	
+
+	linear_identify.html("");
+	var kill_max= silder.value();
 	// note truly pressed
-	if (best_n!=-1)
-	{
-		kill[best_n]=6;
-		kill[best_n+12]=8;
-		kill[best_n+12+7]=8;
-		kill[best_n+12+12]=8;
-		linear_identify.html(str_1[(best_n-12-1) % 12]+ " [" + Math.floor((best_n-12-1) / 12) + "]");
-	}
-	// CANON specical trick!!!
-	if ((best_n-12-1) / 12<=3)
-		best_n=-1;
-	// 1945 specical trick!!!
-	if ((best_n-12-1) / 12>7)
-		best_n=-1;
+	if (best_n.size>0)
+		best_n.forEach(function(best_n_this) {
+			
+			kill[best_n_this]= kill_max;
+			kill[best_n_this+12]= kill_max;
+			kill[best_n_this+12+7]= kill_max;
+			kill[best_n_this+12+12]= kill_max;
+			
+			linear_identify.html(linear_identify.html()+" "+str_2[(best_n_this-12-1) % 12]+ " [" + Math.floor((best_n_this-12-1) / 12) + "]");
+		});
+	
 	if (triggered)
 	{
 		// capture note spectrum
@@ -345,38 +372,47 @@ draw = function () {
 				prompt.html( 'Profile (triggered'+capture_t.toString()+' times.): ');
 		}
 	}
-
+	best_n.forEach(function(best_n_this) {
+		// CANON specical trick!!!
+		if ((best_n_this-12-1) / 12<=3)
+			best_n.delete(best_n_this);
+		// 1945 specical trick!!!
+		/*if ((best_n-12-1) / 12>7)
+			best_n.delete(best_n_this);*/
+	});
 	// record
-	if ((!capture) && recording)  
-		if (best_n!=-1){
-			var n=best_n;
-			//console.log(amp_identify.html())
-			record[record.length]={
-				time:Math.floor(performance.now())-record_start_time,
-				note:best_n,
-				amp:got_freq_amp[n]
-			};
-			record_result+=" ~ "+str_1[(n-12-1) % 12]  + " [" +Math.floor((n-12-1) / 12)+ "] ";
-			result.html(record_result);
+	if ((!capture) && recording)
+		if (best_n.size>0){
+			best_n.forEach(function(n) {
+				//if (str_1[(n-12-1) % 12]=="2")
+					//alert(got_freq_probability[n]/best_times);
+				//console.log(amp_identify.html())
+				record[record.length]={
+					time:Math.floor(performance.now())-record_start_time,
+					note:n,
+					amp:got_freq_amp[n]
+				};				
+			});
+			result.html(showrecord());
 	}
 /////////////////////////////////////////////////////////////////////////
-	
+
 	if (!recording){
 		// draw spectrum
 		background(200);
 		stroke("red");
 		beginShape();
-		for (var p = 0; p < width; p++) 
+		for (var p = 0; p < width; p++)
 			vertex(p, map(spectrum_log[p+start_a], 0, 256*256, height, 0));
 		endShape();
 		stroke("black");
 		beginShape();
-		for (var p = 0; p < width; p++) 
+		for (var p = 0; p < width; p++)
 			vertex(p, map(spectrum_log_now[p+start_a], 0, 256*256, height, 0));
 		endShape();
 		// draw notes
 		beginShape();
-		
+
 		for (var n = 0; n < max_n; n++) {
 			var p = Math.floor(offset_a + std_length_a * n / 12);
 			switch (n % 12) {
