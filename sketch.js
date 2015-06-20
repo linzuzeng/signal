@@ -22,7 +22,7 @@ var spectrum_log = new Int32Array(spectrum_log_length);
 var got_freq_probability=new Int32Array(max_n);
 var got_freq_amp = new Int32Array(max_n);
 var got_freq = new Set();
-var kill_max=3;
+var kill_max=8;
 var amp_per_note_last ={};
 var record_start_time;
 var record =[];
@@ -234,7 +234,7 @@ setup = function () {
 		}
 	});
 
-	silder=createSlider(0,10,3);
+	silder=createSlider(0,20,8);
 	silder.mousePressed(function(){
 		kill_max= silder.value();
 		console.log(kill_max);
@@ -365,7 +365,7 @@ draw = function () {
 	if (best_n.size>0)
 		best_n.forEach(function(best_n_this) {
 			
-			kill[best_n_this]= kill_max;
+			kill[best_n_this]= kill_max-2;
 			kill[best_n_this+12]= kill_max;
 			kill[best_n_this+12+7]= kill_max;
 			kill[best_n_this+12+12]= kill_max;
@@ -386,8 +386,8 @@ draw = function () {
 		if ((best_n_this-12-1) / 12<=3)
 			best_n.delete(best_n_this);
 		// 1945 specical trick!!!
-		//if ((best_n-12-1) / 12>7)
-		//	best_n.delete(best_n_this);
+		if ((best_n-12-1) / 12>7)
+			best_n.delete(best_n_this);
 	});
 	// record
 	if ((!capture) && recording)
